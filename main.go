@@ -80,7 +80,7 @@ func main() {
 		config.SetMyPort(sippy_net.NewMyPort(strconv.Itoa(lport)))
 	}
 	config.SetSipPort(config.GetMyPort())
-	cmap := sbc.NewCallMap(config, error_logger)
+	cmap := sbc.NewCallManager(config, error_logger)
 	sipTransactionManager, err := sippy.NewSipTransactionManager(config, cmap)
 	if err != nil {
 		error_logger.Error(err)

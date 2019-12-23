@@ -41,12 +41,12 @@ type CallController struct {
 	uaO                     sippy_types.UA
 	lock                    *sync.Mutex // this must be a reference to prevent memory leak
 	id                      int64
-	cmap                    *CallMap
+	cmap                    *CallManager
 	evTry                   *sippy.CCEventTry
 	transfer_is_in_progress bool
 }
 
-func NewCallController(cmap *CallMap, next_cc_id <-chan int64) *CallController {
+func NewCallController(cmap *CallManager, next_cc_id <-chan int64) *CallController {
 	self := &CallController{
 		id:                      <-next_cc_id,
 		uaO:                     nil,
