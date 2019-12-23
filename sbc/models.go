@@ -1,13 +1,12 @@
 package sbc
 
 import (
-    "sippy/conf"
-    "sippy/net"
+	"sippy/conf"
+	"sippy/net"
 )
 
-
 type Config struct {
-    sippy_conf.Config
+	sippy_conf.Config
 
-    NH_addr *sippy_net.HostPort
+	NH_addr *sippy_net.HostPort
 }

@@ -7,14 +7,13 @@ import (
 )
 
 type CallMap struct {
-	config *Config
-	logger          sippy_log.ErrorLogger
-	Sip_TM          sippy_types.SipTransactionManager
-	Proxy           sippy_types.StatefulProxy
-	ccmap           map[int64]*CallController
-	ccmap_lock      sync.Mutex
+	config     *Config
+	logger     sippy_log.ErrorLogger
+	Sip_TM     sippy_types.SipTransactionManager
+	Proxy      sippy_types.StatefulProxy
+	ccmap      map[int64]*CallController
+	ccmap_lock sync.Mutex
 }
-
 
 func (self *CallMap) Remove(ccid int64) {
 	self.ccmap_lock.Lock()
@@ -31,12 +30,11 @@ func (self *CallMap) Shutdown() {
 	}
 }
 
-
 func NewCallMap(config *Config, logger sippy_log.ErrorLogger) *CallMap {
 	return &CallMap{
-		logger          : logger,
-		config          : config,
-		ccmap           : make(map[int64]*CallController),
+		logger: logger,
+		config: config,
+		ccmap:  make(map[int64]*CallController),
 	}
 }
 
@@ -53,9 +51,7 @@ func init() {
 	}()
 }
 
-
-
-func (self * CallMap) OnNewDialog(req sippy_types.SipRequest, tr sippy_types.ServerTransaction) (sippy_types.UA, sippy_types.RequestReceiver, sippy_types.SipResponse) {
+func (self *CallMap) OnNewDialog(req sippy_types.SipRequest, tr sippy_types.ServerTransaction) (sippy_types.UA, sippy_types.RequestReceiver, sippy_types.SipResponse) {
 	to_body, err := req.GetTo().GetBody(self.config)
 	if err != nil {
 		self.logger.Error("CallMap::OnNewDialog: #1: " + err.Error())
@@ -79,6 +75,9 @@ func (self * CallMap) OnNewDialog(req sippy_types.SipRequest, tr sippy_types.Ser
 	}
 	if req.GetMethod() == "NOTIFY" || req.GetMethod() == "PING" {
 		// Whynot?
+		return nil, nil, req.GenResponse(200, "OK", nil, nil)
+	}
+	if req.GetMethod() == "OPTIONS" {
 		return nil, nil, req.GenResponse(200, "OK", nil, nil)
 	}
 	return nil, nil, req.GenResponse(501, "Not Implemented", nil, nil)

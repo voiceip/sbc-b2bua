@@ -28,140 +28,137 @@
 package sbc
 
 import (
-    "fmt"
-    sippy_net "sippy/net"
-    "sync"
+	"fmt"
+	"sync"
 
-    "sippy"
-    //"sippy/net"
-    "sippy/types"
+	"sippy"
+	"sippy/net"
+	"sippy/types"
 )
 
 type CallController struct {
-    uaA             sippy_types.UA
-    uaO             sippy_types.UA
-    lock            *sync.Mutex // this must be a reference to prevent memory leak
-    id              int64
-    cmap            *CallMap
-    evTry           *sippy.CCEventTry
-    transfer_is_in_progress bool
+	uaA                     sippy_types.UA
+	uaO                     sippy_types.UA
+	lock                    *sync.Mutex // this must be a reference to prevent memory leak
+	id                      int64
+	cmap                    *CallMap
+	evTry                   *sippy.CCEventTry
+	transfer_is_in_progress bool
 }
 
 func NewCallController(cmap *CallMap, next_cc_id <-chan int64) *CallController {
-    self := &CallController{
-        id              : <-next_cc_id,
-        uaO             : nil,
-        lock            : new(sync.Mutex),
-        cmap            : cmap,
-        transfer_is_in_progress : false,
-    }
-    self.uaA = sippy.NewUA(cmap.Sip_TM, cmap.config, cmap.config.NH_addr, self, self.lock, nil)
-    self.uaA.SetDeadCb(self.aDead)
-    //self.uaA.SetCreditTime(5 * time.Second)
-    return self
+	self := &CallController{
+		id:                      <-next_cc_id,
+		uaO:                     nil,
+		lock:                    new(sync.Mutex),
+		cmap:                    cmap,
+		transfer_is_in_progress: false,
+	}
+	self.uaA = sippy.NewUA(cmap.Sip_TM, cmap.config, cmap.config.NH_addr, self, self.lock, nil)
+	self.uaA.SetDeadCb(self.aDead)
+	//self.uaA.SetCreditTime(5 * time.Second)
+	return self
 }
 
 func (self *CallController) handle_transfer(event sippy_types.CCEvent, ua sippy_types.UA) {
-    switch ua {
-    case self.uaA:
-        if _, ok := event.(*sippy.CCEventConnect); ok {
-            // Transfer is completed.
-            self.transfer_is_in_progress = false
-        }
-        self.uaO.RecvEvent(event)
-    case self.uaO:
-        if _, ok := event.(*sippy.CCEventPreConnect); ok {
-            //
-            // Convert into CCEventUpdate.
-            //
-            // Here 200 OK response from the new callee has been received
-            // and now re-INVITE will be sent to the caller.
-            //
-            // The CCEventPreConnect is here because the outgoing call to the
-            // new destination has been sent using the late offer model, i.e.
-            // the outgoing INVITE was body-less.
-            //
-            event = sippy.NewCCEventUpdate(event.GetRtime(), event.GetOrigin(), event.GetReason(),
-                event.GetMaxForwards(), event.GetBody().GetCopy())
-        }
-        self.uaA.RecvEvent(event)
-    }
+	switch ua {
+	case self.uaA:
+		if _, ok := event.(*sippy.CCEventConnect); ok {
+			// Transfer is completed.
+			self.transfer_is_in_progress = false
+		}
+		self.uaO.RecvEvent(event)
+	case self.uaO:
+		if _, ok := event.(*sippy.CCEventPreConnect); ok {
+			//
+			// Convert into CCEventUpdate.
+			//
+			// Here 200 OK response from the new callee has been received
+			// and now re-INVITE will be sent to the caller.
+			//
+			// The CCEventPreConnect is here because the outgoing call to the
+			// new destination has been sent using the late offer model, i.e.
+			// the outgoing INVITE was body-less.
+			//
+			event = sippy.NewCCEventUpdate(event.GetRtime(), event.GetOrigin(), event.GetReason(),
+				event.GetMaxForwards(), event.GetBody().GetCopy())
+		}
+		self.uaA.RecvEvent(event)
+	}
 }
 
 func (self *CallController) RecvEvent(event sippy_types.CCEvent, ua sippy_types.UA) {
-    if self.transfer_is_in_progress {
-        self.handle_transfer(event, ua)
-        return
-    }
-    if ua == self.uaA {
-        if self.uaO == nil {
-            evTry, ok := event.(*sippy.CCEventTry)
-            if ! ok {
-                // Some weird event received
-                self.uaA.RecvEvent(sippy.NewCCEventDisconnect(nil, event.GetRtime(), ""))
-                return
-            }
-            self.uaO = sippy.NewUA(self.cmap.Sip_TM, self.cmap.config, self.cmap.config.NH_addr, self, self.lock, nil)
-            self.uaO.SetRAddr(self.cmap.config.NH_addr)
-            self.uaO.SetDeadCb(self.oDead)
-            self.evTry = evTry
-        }
-        self.uaO.RecvEvent(event)
-    } else {
-        if ev_disc, ok := event.(*sippy.CCEventDisconnect); ok {
-            redirectUrl := ev_disc.GetRedirectURL()
-            if redirectUrl != nil {
-                fmt.Println("got refer CCEventDisconnect ")
+	if self.transfer_is_in_progress {
+		self.handle_transfer(event, ua)
+		return
+	}
+	if ua == self.uaA {
+		if self.uaO == nil {
+			evTry, ok := event.(*sippy.CCEventTry)
+			if !ok {
+				// Some weird event received
+				self.uaA.RecvEvent(sippy.NewCCEventDisconnect(nil, event.GetRtime(), ""))
+				return
+			}
+			self.uaO = sippy.NewUA(self.cmap.Sip_TM, self.cmap.config, self.cmap.config.NH_addr, self, self.lock, nil)
+			self.uaO.SetRAddr(self.cmap.config.NH_addr)
+			self.uaO.SetDeadCb(self.oDead)
+			self.evTry = evTry
+		}
+		self.uaO.RecvEvent(event)
+	} else {
+		if ev_disc, ok := event.(*sippy.CCEventDisconnect); ok {
+			redirectUrl := ev_disc.GetRedirectURL()
+			if redirectUrl != nil {
+				fmt.Println("got refer CCEventDisconnect ")
 
-                //
-                // Either REFER or a BYE with Also: has been received from the callee.
-                //
-                // Do not interrupt the caller call leg and create a new call leg
-                // to the new destination.
-                //
-                cld := redirectUrl.GetUrl().Username
+				//
+				// Either REFER or a BYE with Also: has been received from the callee.
+				//
+				// Do not interrupt the caller call leg and create a new call leg
+				// to the new destination.
+				//
+				cld := redirectUrl.GetUrl().Username
 
-                fmt.Println("Redirect to ", redirectUrl.GetUrl().String())
+				fmt.Println("Redirect to ", redirectUrl.GetUrl().String())
 
-                nhAddr := &sippy_net.HostPort{Host: redirectUrl.GetUrl().Host, Port: redirectUrl.GetUrl().Port }
-                //nh_addr := self.cmap.config.NH_addr
+				nhAddr := &sippy_net.HostPort{Host: redirectUrl.GetUrl().Host, Port: redirectUrl.GetUrl().Port}
+				nhAddr = self.cmap.config.NH_addr
 
-                self.uaO = sippy.NewUA(self.cmap.Sip_TM, self.cmap.config, nhAddr, self, self.lock, nil)
-                self.uaO.SetDeadCb(self.oDead)
+				self.uaO = sippy.NewUA(self.cmap.Sip_TM, self.cmap.config, nhAddr, self, self.lock, nil)
+				self.uaO.SetDeadCb(self.oDead)
 
-                ev_try := sippy.NewCCEventTry(self.evTry.GetSipCallId(), self.evTry.GetSipCiscoGUID(),
-                    self.evTry.GetCLI(), cld, self.evTry.GetBody() /*body*/, nil /*auth*/, self.evTry.GetCallerName(),
-                    ev_disc.GetRtime(), self.evTry.GetOrigin())
+				ev_try := sippy.NewCCEventTry(self.evTry.GetSipCallId(), self.evTry.GetSipCiscoGUID(),
+					self.evTry.GetCLI(), cld, self.evTry.GetBody() /*body*/, nil /*auth*/, self.evTry.GetCallerName(),
+					ev_disc.GetRtime(), self.evTry.GetOrigin())
 
-
-                self.transfer_is_in_progress = true
-                self.uaO.RecvEvent(ev_try)
-                return
-            }
-        }
-        self.uaA.RecvEvent(event)
-    }
+				self.transfer_is_in_progress = true
+				self.uaO.RecvEvent(ev_try)
+				return
+			}
+		}
+		self.uaA.RecvEvent(event)
+	}
 }
 
-
 func (self *CallController) oDead() {
-    self.cmap.Remove(self.id)
+	self.cmap.Remove(self.id)
 }
 
 func (self *CallController) aDead() {
-    self.cmap.Remove(self.id)
+	self.cmap.Remove(self.id)
 }
 
 func (self *CallController) Shutdown() {
-    self.uaA.Disconnect(nil, "")
+	self.uaA.Disconnect(nil, "")
 }
 
 func (self *CallController) String() string {
-    res := "uaA:" + self.uaA.String() + ", uaO: "
-    if self.uaO == nil {
-        res += "nil"
-    } else {
-        res += self.uaO.String()
-    }
-    return res
+	res := "uaA:" + self.uaA.String() + ", uaO: "
+	if self.uaO == nil {
+		res += "nil"
+	} else {
+		res += self.uaO.String()
+	}
+	return res
 }
