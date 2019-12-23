@@ -1,0 +1,3 @@
+[submodule "lib/go-b2bua"]
+	path = lib/go-b2bua
+	url = git@github.com:voiceip/go-b2bua.git

@@ -1,0 +1,4 @@
+github.com/sippy/go-b2bua v0.0.0-20191222185956-9b578d9c6af2 h1:OGjYEVXX10ZW8zVKzf1i6aZFpCqu1EL/iFParBQbLEc=
+github.com/sippy/go-b2bua v0.0.0-20191222185956-9b578d9c6af2/go.mod h1:Yp2xvjDRmS4NsQgyNvtcbpbrSbIclPqQ0AkQBQCcF/w=
+github.com/voiceip/go-b2bua v0.0.0-20191222185956-9b578d9c6af2 h1:dlYD5qj6Rs2tprGhVSUkfth9LZkcKdpTobJ79StEt90=
+github.com/voiceip/go-b2bua v0.0.0-20191222185956-9b578d9c6af2/go.mod h1:8+hP+RvBnETlm8UipnDwaFFbDSRDq26NHmYdtAayHTc=
