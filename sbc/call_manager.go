@@ -41,7 +41,6 @@ func NewCallManager(config *Config, logger sippy_log.ErrorLogger) *CallManager {
 var next_cc_id chan int64
 
 func init() {
-	//fmt.Println("This will get called on main initialization")
 	next_cc_id = make(chan int64)
 	go func() {
 		var id int64 = 1
@@ -53,18 +52,18 @@ func init() {
 }
 
 func (self *CallManager) OnNewDialog(req sippy_types.SipRequest, tr sippy_types.ServerTransaction) (sippy_types.UA, sippy_types.RequestReceiver, sippy_types.SipResponse) {
-	to_body, err := req.GetTo().GetBody(self.config)
+	toBody, err := req.GetTo().GetBody(self.config)
 	if err != nil {
 		self.logger.Error("CallManager::OnNewDialog: #1: " + err.Error())
 		return nil, nil, req.GenResponse(500, "Internal Server Error", nil, nil)
 	}
-	if to_body.GetTag() != "" {
+	if toBody.GetTag() != "" {
 		// Request within dialog, but no such dialog
 		return nil, nil, req.GenResponse(481, "Call Leg/Transaction Does Not Exist", nil, nil)
 	}
 	if req.GetMethod() == "INVITE" {
 		// New dialog
-		cc := NewCallController(self, next_cc_id)
+		cc := NewCallController(self, <-next_cc_id)
 		self.ccmap_lock.Lock()
 		self.ccmap[cc.id] = cc
 		self.ccmap_lock.Unlock()

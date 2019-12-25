@@ -32,7 +32,6 @@ import (
 	"sync"
 
 	"sippy"
-	"sippy/net"
 	"sippy/types"
 )
 
@@ -46,9 +45,9 @@ type CallController struct {
 	transfer_is_in_progress bool
 }
 
-func NewCallController(cmap *CallManager, next_cc_id <-chan int64) *CallController {
+func NewCallController(cmap *CallManager, cc_id int64) *CallController {
 	self := &CallController{
-		id:                      <-next_cc_id,
+		id:                      cc_id,
 		uaO:                     nil,
 		lock:                    new(sync.Mutex),
 		cmap:                    cmap,
@@ -112,22 +111,22 @@ func (self *CallController) RecvEvent(event sippy_types.CCEvent, ua sippy_types.
 			if redirectUrl != nil {
 				fmt.Println("got refer CCEventDisconnect ")
 
-				//
 				// Either REFER or a BYE with Also: has been received from the callee.
 				//
 				// Do not interrupt the caller call leg and create a new call leg
 				// to the new destination.
 				//
-				cld := redirectUrl.GetUrl().Username
-
 				fmt.Println("Redirect to ", redirectUrl.GetUrl().String())
 
-				nhAddr := &sippy_net.HostPort{Host: redirectUrl.GetUrl().Host, Port: redirectUrl.GetUrl().Port}
-				nhAddr = self.cmap.config.NH_addr
+				nhAddr := redirectUrl.GetUrl().GetAddr(self.cmap.config)
+				//nhAddr = self.cmap.config.NH_addr
 
 				self.uaO = sippy.NewUA(self.cmap.Sip_TM, self.cmap.config, nhAddr, self, self.lock, nil)
 				self.uaO.SetDeadCb(self.oDead)
+				//self.uaO.SetOutboundProxy(nhAddr)
 
+				//cId := sippy_header.GenerateSipCallId(self.cmap.config)
+				cld := redirectUrl.GetUrl().Username
 				ev_try := sippy.NewCCEventTry(self.evTry.GetSipCallId(), self.evTry.GetSipCiscoGUID(),
 					self.evTry.GetCLI(), cld, self.evTry.GetBody() /*body*/, nil /*auth*/, self.evTry.GetCallerName(),
 					ev_disc.GetRtime(), self.evTry.GetOrigin())

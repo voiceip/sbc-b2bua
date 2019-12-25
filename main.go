@@ -3,6 +3,7 @@ package main
 import (
 	crand "crypto/rand"
 	"flag"
+	"fmt"
 	mrand "math/rand"
 	"os"
 	"os/signal"
@@ -19,8 +20,7 @@ import (
 	"sippy/net"
 )
 
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+func init()  {
 	buf := make([]byte, 8)
 	crand.Read(buf)
 	var salt int64
@@ -28,6 +28,10 @@ func main() {
 		salt = (salt << 8) | int64(c)
 	}
 	mrand.Seed(salt)
+}
+
+func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var laddr, nh_addr, logfile string
 	var lport int
@@ -39,6 +43,11 @@ func main() {
 	flag.StringVar(&logfile, "L", "/var/log/sip.log", "Log file")
 	flag.Parse()
 
+	if nh_addr == "" {
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
 	error_logger := sippy_log.NewErrorLogger()
 	sip_logger, err := sippy_log.NewSipLogger("b2bua", logfile)
 	if err != nil {
@@ -47,7 +56,6 @@ func main() {
 	}
 	config := &sbc.Config{
 		Config:  sippy_conf.NewConfig(error_logger, sip_logger),
-		NH_addr: sippy_net.NewHostPort("192.168.0.102", "5060"), // next hop address
 	}
 	//config.SetIPV6Enabled(false)
 	if nh_addr != "" {
@@ -70,7 +78,7 @@ func main() {
 		}
 		config.NH_addr = sippy_net.NewHostPort(addr, port)
 	}
-	config.SetMyUAName("Sippy B2BUA (Simple)")
+	config.SetMyUAName("Strowger SBC B2BUA")
 	config.SetAllowFormats([]int{0, 8, 18, 100, 101})
 	if laddr != "" {
 		config.SetMyAddress(sippy_net.NewMyAddress(laddr))
@@ -89,6 +97,8 @@ func main() {
 	cmap.Sip_TM = sipTransactionManager
 	cmap.Proxy = sippy.NewStatefulProxy(sipTransactionManager, config.NH_addr, config)
 	go sipTransactionManager.Run()
+
+	fmt.Println(fmt.Sprintf("Started Listen on %s:%s", config.GetMyAddress(), config.GetMyPort().String()))
 
 	signal_chan := make(chan os.Signal, 1)
 	signal.Notify(signal_chan, syscall.SIGTERM, syscall.SIGINT)
