@@ -1,0 +1,17 @@
+[Unit]
+Description=VoiceIP B2BUA
+
+[Service]
+EnvironmentFile=/etc/default/voiceip-b2bua
+ExecStart=/bin/sh -c '/usr/local/bin/voiceip-b2bua -p $LISTEN_PORT -n $DESTINATION -l $LISTEN_IP 2>&1 > /var/log/voiceip-b2bua.log'
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=voiceip-b2bua
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

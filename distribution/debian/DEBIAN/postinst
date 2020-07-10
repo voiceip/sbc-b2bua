@@ -1,0 +1,20 @@
+#!/bin/bash -e
+
+PAC=_PACKAGE_
+USER=_USER_
+GROUP=_GROUP_
+HOST=$(hostname -f)
+
+variant=base
+if [ "$1" == "configure" ] ; then
+
+    # Source debconf library.
+    #. /usr/share/debconf/confmodule
+
+    systemctl daemon-reload
+ 	systemctl enable $PAC
+ 	# systemctl start $PAC
+
+fi
+
+exit 0

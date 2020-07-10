@@ -2,3 +2,5 @@
 *.iml
 sbc-b2bua*
 .DS_Store
+bin/
+*.deb

@@ -1,0 +1,8 @@
+Package: voiceip-b2bua
+Version: 1._VERSION_
+Architecture: amd64
+Section: base
+Priority: standard
+Depends: logrotate
+Maintainer: Kinshuk B <hi@kinsh.uk>
+Description: VoiceIP B2BUA

@@ -1,0 +1,8 @@
+/var/log/voiceip-b2bua.log {
+    daily
+    rotate 7
+    missingok
+    compress
+    delaycompress
+    copytruncate
+}

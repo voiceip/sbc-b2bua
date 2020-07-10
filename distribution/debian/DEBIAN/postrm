@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -x
+
+CMD="$1"
+
+PAC=_PACKAGE_
+APP_USER=_USER_
+APP_GROUP=_GROUP_
+
+if [ -f "/var/run/$PAC" ]; then
+    rm -rf "/var/run/$PAC";
+fi
+
+if [ -f "/var/run/$PAC.pid" ]; then
+    rm -rf "/var/run/$PAC.pid";
+fi
+
+if [ "$CMD" == "purge" ]; then
+
+	if [ -d "/etc/$PAC" ]; then
+		rm -rf /etc/$PAC
+	fi
+
+	if [ -d "/usr/share/$PAC" ]; then
+		rm -rf /usr/share/$PAC
+	fi
+
+	if [ -d "/var/lib/$PAC" ]; then
+		rm -rf /var/lib/$PAC
+	fi
+
+	if [ -d "/var/cache/$PAC" ]; then
+		rm -rf /var/cache/$PAC
+	fi
+
+fi
+
+
+exit 0

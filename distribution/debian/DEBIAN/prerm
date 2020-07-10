@@ -1,0 +1,9 @@
+#!/bin/bash
+
+PAC=_PACKAGE_
+CMD="$1"
+
+if [ "$CMD" == "remove" -o "$CMD" == "upgrade" ]; then
+   systemctl stop $PAC || true
+fi
+
