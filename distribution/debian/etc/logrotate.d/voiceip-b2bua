@@ -1,4 +1,4 @@
-/var/log/voiceip-b2bua.log {
+/var/log/voiceip-b2bua.log /var/log/voiceip-b2bua-sip.log {
     daily
     rotate 7
     missingok
