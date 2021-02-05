@@ -128,7 +128,7 @@ func (self *CallController) RecvEvent(event sippy_types.CCEvent, ua sippy_types.
 				//cId := sippy_header.GenerateSipCallId(self.cmap.config)
 				cld := redirectUrl.GetUrl().Username
 				ev_try := sippy.NewCCEventTry(self.evTry.GetSipCallId(), self.evTry.GetSipCiscoGUID(),
-					self.evTry.GetCLI(), cld, self.evTry.GetBody() /*body*/, nil /*auth*/, self.evTry.GetCallerName(),
+					self.evTry.GetCLI(), cld, nil /*body*/, nil /*auth*/, self.evTry.GetCallerName(),
 					ev_disc.GetRtime(), self.evTry.GetOrigin())
 
 				self.transfer_is_in_progress = true

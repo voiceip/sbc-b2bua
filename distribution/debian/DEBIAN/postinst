@@ -13,7 +13,7 @@ if [ "$1" == "configure" ] ; then
 
     systemctl daemon-reload
  	systemctl enable $PAC
- 	# systemctl start $PAC
+ 	systemctl restart $PAC
 
 fi
 
