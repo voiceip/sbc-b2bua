@@ -32,7 +32,7 @@ import (
 	"sync"
 
 	"sippy"
-	"sippy/types"
+	sippy_types "sippy/types"
 )
 
 type CallController struct {
@@ -127,7 +127,7 @@ func (self *CallController) RecvEvent(event sippy_types.CCEvent, ua sippy_types.
 
 				//cId := sippy_header.GenerateSipCallId(self.cmap.config)
 				cld := redirectUrl.GetUrl().Username
-				ev_try := sippy.NewCCEventTry(self.evTry.GetSipCallId(), self.evTry.GetSipCiscoGUID(),
+				ev_try, _ := sippy.NewCCEventTry(self.evTry.GetSipCallId(),
 					self.evTry.GetCLI(), cld, nil /*body*/, nil /*auth*/, self.evTry.GetCallerName(),
 					ev_disc.GetRtime(), self.evTry.GetOrigin())
 
